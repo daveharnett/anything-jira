@@ -1,0 +1,58 @@
+{
+  "active": false,
+  "hubId": "jira-link-issues",
+  "name": "Link Jira Issues",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Creates a link between two Jira issues (e.g. 'Blocks', 'Relates', 'Duplicate'). Use to link, block, or relate two issues.",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "inwardIssue": {
+        "description": "The first issue key (the 'from' side), e.g. 'ENG-1'. Required.",
+        "type": "string"
+      },
+      "outwardIssue": {
+        "description": "The second issue key (the 'to' side), e.g. 'ENG-2'. Required.",
+        "type": "string"
+      },
+      "linkType": {
+        "description": "The link type name as defined in your Jira, e.g. 'Blocks', 'Relates', 'Duplicate'. Defaults to 'Relates'.",
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "ENG-1 blocks ENG-2",
+      "call": "{\"inwardIssue\":\"ENG-1\",\"outwardIssue\":\"ENG-2\",\"linkType\":\"Blocks\"}"
+    }
+  ],
+  "imported": true
+}

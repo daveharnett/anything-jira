@@ -12,16 +12,29 @@ the Jira assistant:
 jira-assistant/
 ├── README.md                         ← you are here
 ├── DECISIONS.md                      ← findings + the choices made (read for "why")
-├── CONVERSION.md                     ← how to port more Jira skills
+├── CONVERSION.md                     ← how to add/port more Jira skills
 ├── agent-skills/
-│   └── create-jira-issue/            ← the reference skill (working)
-│       ├── plugin.json               ← identity, settings form, tool signature
-│       └── handler.js                ← the Jira REST call
+│   ├── _shared/jira.js               ← shared REST helpers (copied into each skill at install)
+│   ├── create-jira-issue/            ← one skill per Jira operation …
+│   │   ├── plugin.json               ←   identity, settings form, tool signature
+│   │   └── handler.js                ←   the Jira REST call (requires ./jira.js)
+│   ├── jira-get-issue/  jira-search-issues/  jira-edit-issue/
+│   ├── jira-assign-issue/  jira-transition-issue/  jira-comment-issue/
+│   ├── jira-link-issues/  jira-add-worklog/  jira-add-to-epic/
+│   ├── jira-list-projects/  jira-list-boards/  jira-list-sprints/
+│   └── jira-add-to-sprint/  jira-whoami/
 └── build/
-    ├── seed.cjs                      ← one-time installer step (skill + provider)
+    ├── seed.cjs                      ← one-time installer step (installs ALL skills + provider)
+    ├── gen-manifests.cjs             ← regenerates every plugin.json from one spec
     ├── env.defaults                  ← provider defaults to bake into the build
     └── package-desktop.md            ← how to assemble the installer
 ```
+
+**Architecture:** one focused skill per Jira operation (so the model gets a
+precise schema per tool and you can toggle them individually), all sharing one
+config and one REST helper library (`_shared/jira.js`, copied into each skill
+folder at install time so every installed skill is self-contained). See
+`DECISIONS.md` §8 for why this beats a single mega-tool.
 
 ---
 
@@ -77,18 +90,33 @@ if your routing needs it, a virtual key / config id).
 
 ---
 
-## How the Jira skill works
+## What the assistant can do (skills)
 
-`agent-skills/create-jira-issue/` is a standard AnythingLLM custom agent skill:
+Each skill is a standard AnythingLLM custom agent skill (a `plugin.json` settings
+form + tool signature, and a `handler.js` that calls the Jira REST API with
+`Authorization: Bearer <PAT>`). They cover the everyday Jira CLI surface:
 
-- **`plugin.json`** declares the settings form (`JIRA_BASE_URL`, `JIRA_PAT`,
-  optional `JIRA_DEFAULT_PROJECT_KEY`) and the tool the model can call (with
-  params `summary`, `projectKey`, `issueType`, `description`, `labels`).
-- **`handler.js`** validates config, normalizes the Jira URL, and calls
-  `POST /rest/api/2/issue` with `Authorization: Bearer <PAT>`. It returns the new
-  issue key + browse URL, and maps Jira errors (401/403/404/…) to plain messages.
+| Skill | What it does | jira-cli equivalent |
+|---|---|---|
+| Create Jira Issue | Create a Task/Story/Bug/Epic | `issue create` |
+| Get Jira Issue | View one issue's details | `issue view` |
+| Search Jira Issues | List issues via JQL | `issue list` |
+| Edit Jira Issue | Update summary/description/priority/labels | `issue edit` |
+| Assign Jira Issue | Assign (incl. "to me") / unassign | `issue assign` |
+| Transition Jira Issue | Move workflow status | `issue move` |
+| Comment on Jira Issue | Add a comment | `comment add` |
+| Link Jira Issues | Link two issues (Blocks/Relates/…) | `issue link` |
+| Log Work | Add a worklog | `worklog add` |
+| Add Issues to Epic | Attach issues to an epic | `epic add` |
+| List/Add Sprint | List sprints, add issues to a sprint | `sprint list`/`add` |
+| List Boards / List Projects | Discover boards & projects | `board list`/`project list` |
+| Jira Whoami | Show the authenticated user | `me` |
 
-It talks **only** to your configured Jira host and never runs a shell.
+All skills talk **only** to your configured Jira host, never run a shell, share
+the same three settings (`JIRA_BASE_URL`, `JIRA_PAT`, optional
+`JIRA_DEFAULT_PROJECT_KEY`), and map Jira errors (401/403/404/…) to plain
+messages. Not yet shipped (easy extensions — see `CONVERSION.md`): clone, delete,
+unlink, remote links, release list, watch, open-in-browser.
 
 ---
 
@@ -116,11 +144,12 @@ actual desktop installer, see `build/package-desktop.md`.
 
 ## Adding or converting more skills
 
-The reference skill is one of several Jira operations. To port the rest (epic
-writing, comments, transitions, JQL search, …), follow `CONVERSION.md` — it gives
-the `SKILL.md → plugin.json + handler.js` mapping, the handler contract, the
-shared conventions, and the Jira REST endpoints you'll need. Each new skill is a
-new folder under `agent-skills/`; re-run the seed step to install it.
+To add a skill: add its spec to `build/gen-manifests.cjs`, run it to emit the
+`plugin.json`, write a `handler.js` that `require("./jira.js")` and calls the
+right endpoint, then re-run the seed step (it installs every folder under
+`agent-skills/` and copies the shared lib into each). `CONVERSION.md` has the
+full pattern, the handler contract, and the Jira REST endpoint table — including
+how to port an existing Claude Code `SKILL.md`.
 
 ---
 

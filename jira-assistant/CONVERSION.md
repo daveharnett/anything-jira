@@ -5,16 +5,21 @@ This is the repeatable pattern for porting the remaining Jira `SKILL.md` files
 reference implementation is `agent-skills/create-jira-issue/` — copy it and
 follow the steps below.
 
-## The two-file anatomy
+## The anatomy
 
-Each skill is a folder under `agent-skills/<hubId>/` containing exactly:
+Each skill is a folder under `agent-skills/<hubId>/`. In source it holds:
 
 | File          | Role                                                            |
 | ------------- | -------------------------------------------------------------- |
-| `plugin.json` | Manifest: identity, the secrets/config form, and the LLM-facing tool signature. |
-| `handler.js`  | The code that runs when the agent invokes the skill.           |
+| `plugin.json` | Manifest: identity, the secrets/config form, and the LLM-facing tool signature. Generated from `build/gen-manifests.cjs`. |
+| `handler.js`  | The code that runs when the agent invokes the skill. Calls into the shared lib. |
 
 `<hubId>` must be a unique slug **and equal the folder name**.
+
+Shared REST helpers live once in `agent-skills/_shared/jira.js`. At install time
+`build/seed.cjs` copies that file into every skill folder as `jira.js`, so each
+**installed** skill is self-contained (skills run from the storage dir and cannot
+import across sibling folders). Handlers therefore do `require("./jira.js")`.
 
 ## Mapping `SKILL.md` → the two files
 
@@ -59,36 +64,43 @@ module.exports.runtime = {
 Do **not** `export` an arrow function for `handler` — `this` must bind to the
 function-definition object at call time (`await fn.handler(args)`).
 
-## Conventions to keep across all ported skills (from the reference)
+## Conventions to keep across all ported skills
 
-1. **Validate config first.** Bail with a clear message if a required
-   `setup_arg` is empty — the agent surfaces it to the user.
-2. **Normalize the base URL** with `new URL()`, accept only http/https, strip any
-   accidental `/rest/...` path. Reuse `normalizeBaseUrl()` from the reference.
-3. **Auth:** Jira DC PAT → `Authorization: Bearer <pat>`. (Jira Cloud is
-   different and out of scope.)
-4. **One egress only:** `fetch` the configured Jira host. No shell, ever.
-5. **Return structured JSON** (`{ success, message, ... }`) as a string. Map Jira
-   HTTP statuses (401/403/404/…) to human messages — see `jiraErrorMessage()`.
+The shared `_shared/jira.js` already provides these — reuse them, don't re-roll:
+
+1. **Validate config first** with `requireConfig(getConfig(this.runtimeArgs))` —
+   bail with its message if non-null.
+2. **Normalize the base URL** (`getConfig` does this via `normalizeBaseUrl`):
+   http/https only, strips any accidental `/rest/...` path.
+3. **Auth:** every `jiraRequest` sends the PAT as `Authorization: Bearer <pat>`.
+   (Jira Cloud auth is different and out of scope.)
+4. **One egress only:** `jiraRequest` hits the configured Jira host. No shell, ever.
+5. **Return** `success({...})` / `failure(msg)` (both stringify for you). Map Jira
+   statuses to human messages with `jiraErrorMessage(status, data, context)`.
 6. **`introspect` the milestones** ("Creating a Bug in ENG…") so the chat shows
-   progress; **`logger` the raw errors** (never leak tokens to the user).
+   progress; **`logger` the raw status** (never leak tokens to the user).
 
-## Step-by-step
+`_shared/jira.js` exports: `getConfig`, `requireConfig`, `jiraRequest`,
+`jiraErrorMessage`, `success`, `failure`, `issueRow`, `splitList`, `normalizeKey`,
+`normalizeBaseUrl`, `safeJson`.
 
-1. `cp -r agent-skills/create-jira-issue agent-skills/<new-hubId>`.
-2. Edit `plugin.json`: set `hubId` (= folder name), `name`, `description`,
-   `entrypoint.params`, and `examples`. Reuse the same three `setup_args`
-   (`JIRA_BASE_URL`, `JIRA_PAT`, `JIRA_DEFAULT_PROJECT_KEY`) so one config powers
-   every skill.
-3. Rewrite `runtime.handler` for the new operation (different endpoint/verb/body).
-   Keep the helpers (`normalizeBaseUrl`, `safeJson`, `jiraErrorMessage`,
-   `failure`) — copy them or factor them into a shared file you concatenate in
-   (skills must be self-contained at the storage path, so prefer copying).
-4. Test offline with a mocked `global.fetch` and a fake `this` (see the harness
-   pattern used during development) before installing.
-5. Add the new `hubId` to the install list in `build/seed.cjs` (the `HUB_ID`
-   handling) — or generalize it to install every folder under `agent-skills/`.
-6. Re-run the seed step; toggle the skill on in AnythingLLM if needed.
+## Step-by-step (add a new skill)
+
+1. **Add a spec entry** to `build/gen-manifests.cjs` keyed by `<hubId>`: `name`,
+   `description` (the model reads this to decide to call it — be explicit about
+   trigger phrases), `params` (use the `s()`/`n()` helpers), `examples`, and
+   `project: true` if it should expose the optional default-project setting.
+2. **Generate the manifest:** `node build/gen-manifests.cjs` (writes
+   `agent-skills/<hubId>/plugin.json`).
+3. **Write `handler.js`** following the contract above — typically ~25 lines:
+   config check → validate `args` → `jiraRequest` → `success`/`failure`. Copy any
+   existing handler (e.g. `jira-comment-issue`) as a template.
+4. **Test offline** with a mocked `global.fetch` and a fake `this`
+   (`{ runtimeArgs, introspect(){}, logger(){} }`), asserting the request shape
+   and the returned JSON — as the dev test harness does for all 15 skills.
+5. **Install:** re-run the seed step. It installs **every** folder under
+   `agent-skills/` (skipping `_shared`), copies `jira.js` into each, sets
+   `active: true`, and injects the configured secrets. Nothing else to register.
 
 ## Endpoints you'll likely need (Jira Server / Data Center, REST v2)
 

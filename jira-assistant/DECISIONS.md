@@ -140,3 +140,34 @@ but these points would change:
 - **Seeding** becomes a provisioning step (DB/system-settings seed or admin API)
   rather than a file drop, since storage is shared and `STORAGE_DIR` is a volume.
 - **Multi-user mode** in AnythingLLM must be enabled, with auth in front.
+
+## 8. Skill granularity — one skill per operation + a shared lib
+
+To cover the Jira CLI surface we ship ~15 skills (create/get/search/edit/assign/
+transition/comment/link/worklog/epic-add/sprint+board list/sprint-add/projects/
+me) rather than one mega-tool with an `operation` switch.
+
+**Why not a single router tool:** a custom skill maps to exactly one function
+with one flat parameter set (`server/utils/agents/imported.js` spreads
+`runtime` into a single `aibitat.function(...)` whose `handler` is called as
+`fn.handler(args)`). A single tool would force every operation's params into one
+flat, mostly-optional bag plus a stringly-typed `operation` arg — worse tool-call
+accuracy and no per-op schema. Params also can't be enums (type is only
+string/number/boolean), so the union can't be expressed cleanly.
+
+**Why one-per-operation works well here:** each tool gets a precise schema and
+description (better model tool-use), each is individually toggleable in the UI,
+and the duplicated `setup_args` are a non-issue because `build/seed.cjs` injects
+the same `JIRA_BASE_URL`/`JIRA_PAT`/default-project into every skill at install
+time (the user enters them once, in the installer).
+
+**Avoiding code duplication:** shared REST logic lives once in
+`agent-skills/_shared/jira.js`; the seed step copies it into each installed skill
+folder as `jira.js` (handlers `require("./jira.js")`). Installed skills must be
+self-contained at the storage path — they can't import across sibling folders —
+so copying, not symlinking, is deliberate. The manifests are generated from one
+spec (`build/gen-manifests.cjs`) to keep the shared `setup_args`/schema identical
+across skills.
+
+If a future host ever exposes a true multi-function plugin type, these handlers
+collapse into it with no REST changes (the lib is already the seam).

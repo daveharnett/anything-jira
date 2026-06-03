@@ -36,10 +36,19 @@
 const fs = require("fs");
 const path = require("path");
 
-const HUB_ID = "create-jira-issue";
+const SKILLS_SRC = path.resolve(__dirname, "../agent-skills");
+const SHARED_LIB = "jira.js"; // copied from agent-skills/_shared into each skill folder
 
 function log(msg) {
   console.log(`[anything-jira seed] ${msg}`);
+}
+
+/** All skill hubIds = folders under agent-skills, excluding _shared and dotfiles. */
+function listSkillHubIds() {
+  return fs
+    .readdirSync(SKILLS_SRC, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && !d.name.startsWith("_") && !d.name.startsWith("."))
+    .map((d) => d.name);
 }
 
 function resolveStorageDir() {
@@ -53,57 +62,59 @@ function resolveTargetEnvFile() {
   return path.resolve(__dirname, "../../server/.env");
 }
 
-/** Copy the skill folder into storage, set active + secrets, idempotently. */
-function installSkill(storageDir) {
-  const srcDir = path.resolve(__dirname, "../agent-skills", HUB_ID);
-  if (!fs.existsSync(srcDir))
-    throw new Error(`Skill source not found at ${srcDir}`);
-
-  const destSkillsDir = path.join(storageDir, "plugins", "agent-skills");
-  const destDir = path.join(destSkillsDir, HUB_ID);
+/**
+ * Install one skill into storage: copy handler.js + the shared jira.js, set
+ * active, and inject configured setup values without clobbering existing ones
+ * with a blank. Returns the installed manifest.
+ */
+function installSkill(hubId, storageDir, sharedLibSrc) {
+  const srcDir = path.join(SKILLS_SRC, hubId);
+  const destDir = path.join(storageDir, "plugins", "agent-skills", hubId);
   fs.mkdirSync(destDir, { recursive: true });
 
-  // Copy handler.js verbatim.
-  fs.copyFileSync(
-    path.join(srcDir, "handler.js"),
-    path.join(destDir, "handler.js")
-  );
+  fs.copyFileSync(path.join(srcDir, "handler.js"), path.join(destDir, "handler.js"));
+  // Every handler does require("./jira.js"); install the shared lib alongside it.
+  fs.copyFileSync(sharedLibSrc, path.join(destDir, SHARED_LIB));
 
-  // Merge plugin.json: start from source, then preserve/overlay configured values.
-  const sourceManifest = JSON.parse(
-    fs.readFileSync(path.join(srcDir, "plugin.json"), "utf8")
-  );
+  const manifest = JSON.parse(fs.readFileSync(path.join(srcDir, "plugin.json"), "utf8"));
   const destManifestPath = path.join(destDir, "plugin.json");
   const existing = fs.existsSync(destManifestPath)
     ? JSON.parse(fs.readFileSync(destManifestPath, "utf8"))
     : null;
 
-  const manifest = sourceManifest;
   manifest.active = true;
 
-  // Inject configured secrets without clobbering an already-set value with a blank.
   const setupValues = {
     JIRA_BASE_URL: process.env.JIRA_BASE_URL,
     JIRA_PAT: process.env.JIRA_PAT,
     JIRA_DEFAULT_PROJECT_KEY: process.env.JIRA_DEFAULT_PROJECT_KEY,
   };
   for (const [key, value] of Object.entries(setupValues)) {
-    if (!manifest.setup_args?.[key]) continue;
+    if (!manifest.setup_args?.[key]) continue; // skill may not declare this arg
     const incoming = (value ?? "").trim();
     const prior = existing?.setup_args?.[key]?.value ?? "";
     manifest.setup_args[key].value = incoming || prior || "";
   }
 
   fs.writeFileSync(destManifestPath, JSON.stringify(manifest, null, 2));
-  log(`Installed skill '${HUB_ID}' -> ${destDir} (active: true)`);
+  return manifest;
+}
 
-  const missing = ["JIRA_BASE_URL", "JIRA_PAT"].filter(
-    (k) => !manifest.setup_args[k].value
-  );
+/** Install every skill under agent-skills/ into storage. */
+function installAllSkills(storageDir) {
+  const sharedLibSrc = path.join(SKILLS_SRC, "_shared", SHARED_LIB);
+  if (!fs.existsSync(sharedLibSrc))
+    throw new Error(`Shared lib not found at ${sharedLibSrc}`);
+
+  const hubIds = listSkillHubIds();
+  for (const hubId of hubIds) installSkill(hubId, storageDir, sharedLibSrc);
+  log(`Installed ${hubIds.length} skills (active: true): ${hubIds.join(", ")}`);
+
+  const missing = ["JIRA_BASE_URL", "JIRA_PAT"].filter((k) => !(process.env[k] || "").trim());
   if (missing.length)
     log(
-      `WARNING: skill setup value(s) still empty: ${missing.join(", ")}. ` +
-        `The user must fill these in the skill settings before use.`
+      `WARNING: ${missing.join(", ")} not provided. Existing values (if any) were ` +
+        `preserved; otherwise the user must fill these in each skill's settings.`
     );
 }
 
@@ -165,7 +176,7 @@ function main() {
   const targetEnvFile = resolveTargetEnvFile();
   log(`STORAGE_DIR = ${storageDir}`);
 
-  installSkill(storageDir);
+  installAllSkills(storageDir);
   seedProvider(targetEnvFile);
 
   log("Done. Launch AnythingLLM Desktop; the Jira skill and Portkey routing are pre-configured.");

@@ -4,7 +4,7 @@
   "name": "Create Jira Issue",
   "schema": "skill-1.0.0",
   "version": "1.0.0",
-  "description": "Creates a new issue (Task, Story, Bug, etc.) in a Jira Server / Data Center project using the Jira REST API. Use this when the user asks to file, open, raise, or create a Jira issue/ticket.",
+  "description": "Creates a new issue (Task, Story, Bug, Epic, etc.) in a Jira project. Use when the user asks to file, open, raise, or create an issue/ticket.",
   "author": "anything-jira",
   "license": "MIT",
   "setup_args": {
@@ -15,7 +15,7 @@
         "type": "text",
         "default": "",
         "placeholder": "https://jira.your-company.com",
-        "hint": "Base URL of your Jira Server / Data Center instance, with no trailing slash and no /rest path."
+        "hint": "Base URL of your Jira Server / Data Center instance."
       },
       "value": ""
     },
@@ -37,7 +37,7 @@
         "type": "text",
         "default": "",
         "placeholder": "ENG",
-        "hint": "Optional. Project key used when the user does not name a project (e.g. ENG, OPS)."
+        "hint": "Optional. Project key used when the user does not name a project."
       },
       "value": ""
     }
@@ -46,30 +46,34 @@
     "file": "handler.js",
     "params": {
       "summary": {
-        "description": "The one-line title/summary of the issue. Required.",
+        "description": "The one-line title of the issue. Required.",
         "type": "string"
       },
       "projectKey": {
-        "description": "The Jira project key to create the issue in, e.g. 'ENG'. If the user did not specify one, omit this and the skill will fall back to the configured default project key.",
+        "description": "Project key to create the issue in, e.g. 'ENG'. If omitted, the configured default project key is used.",
         "type": "string"
       },
       "issueType": {
-        "description": "The Jira issue type name, e.g. 'Task', 'Story', 'Bug', 'Epic'. Defaults to 'Task' when omitted.",
+        "description": "Issue type name, e.g. 'Task', 'Story', 'Bug', 'Epic'. Defaults to 'Task'.",
         "type": "string"
       },
       "description": {
-        "description": "The full body/description of the issue in plain text. Optional.",
+        "description": "Full body/description of the issue in plain text. Optional.",
         "type": "string"
       },
       "labels": {
-        "description": "Optional comma-separated list of labels to apply, e.g. 'backend,urgent'.",
+        "description": "Optional comma-separated labels, e.g. 'backend,urgent'.",
+        "type": "string"
+      },
+      "priority": {
+        "description": "Optional priority name, e.g. 'High'.",
         "type": "string"
       }
     }
   },
   "examples": [
     {
-      "prompt": "Open a bug in the ENG project: login page 500s on Safari",
+      "prompt": "Open a bug in ENG: login page 500s on Safari",
       "call": "{\"projectKey\":\"ENG\",\"issueType\":\"Bug\",\"summary\":\"Login page 500s on Safari\"}"
     },
     {

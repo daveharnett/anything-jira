@@ -1,0 +1,69 @@
+{
+  "active": false,
+  "hubId": "jira-search-issues",
+  "name": "Search Jira Issues",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Searches Jira issues using a JQL query and returns a compact list (key, summary, status, assignee). Use to list, find, or search issues, e.g. 'my open bugs' or 'issues in ENG updated this week'.",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    },
+    "JIRA_DEFAULT_PROJECT_KEY": {
+      "type": "string",
+      "required": false,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "ENG",
+        "hint": "Optional. Project key used when the user does not name a project."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "jql": {
+        "description": "A Jira JQL query, e.g. \"project = ENG AND status = 'In Progress' ORDER BY updated DESC\". Required.",
+        "type": "string"
+      },
+      "maxResults": {
+        "description": "Max number of issues to return. Defaults to 20.",
+        "type": "number"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "list my open issues",
+      "call": "{\"jql\":\"assignee = currentUser() AND resolution = Unresolved ORDER BY updated DESC\"}"
+    },
+    {
+      "prompt": "show bugs in ENG from this week",
+      "call": "{\"jql\":\"project = ENG AND issuetype = Bug AND created >= -7d\",\"maxResults\":50}"
+    }
+  ],
+  "imported": true
+}
