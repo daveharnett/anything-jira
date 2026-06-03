@@ -1,0 +1,81 @@
+{
+  "active": false,
+  "hubId": "create-jira-issue",
+  "name": "Create Jira Issue",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Creates a new issue (Task, Story, Bug, etc.) in a Jira Server / Data Center project using the Jira REST API. Use this when the user asks to file, open, raise, or create a Jira issue/ticket.",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance, with no trailing slash and no /rest path."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    },
+    "JIRA_DEFAULT_PROJECT_KEY": {
+      "type": "string",
+      "required": false,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "ENG",
+        "hint": "Optional. Project key used when the user does not name a project (e.g. ENG, OPS)."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "summary": {
+        "description": "The one-line title/summary of the issue. Required.",
+        "type": "string"
+      },
+      "projectKey": {
+        "description": "The Jira project key to create the issue in, e.g. 'ENG'. If the user did not specify one, omit this and the skill will fall back to the configured default project key.",
+        "type": "string"
+      },
+      "issueType": {
+        "description": "The Jira issue type name, e.g. 'Task', 'Story', 'Bug', 'Epic'. Defaults to 'Task' when omitted.",
+        "type": "string"
+      },
+      "description": {
+        "description": "The full body/description of the issue in plain text. Optional.",
+        "type": "string"
+      },
+      "labels": {
+        "description": "Optional comma-separated list of labels to apply, e.g. 'backend,urgent'.",
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "Open a bug in the ENG project: login page 500s on Safari",
+      "call": "{\"projectKey\":\"ENG\",\"issueType\":\"Bug\",\"summary\":\"Login page 500s on Safari\"}"
+    },
+    {
+      "prompt": "File a task to update the onboarding docs",
+      "call": "{\"issueType\":\"Task\",\"summary\":\"Update the onboarding docs\"}"
+    }
+  ],
+  "imported": true
+}
