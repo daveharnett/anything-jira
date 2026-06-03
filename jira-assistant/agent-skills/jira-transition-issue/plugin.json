@@ -1,0 +1,62 @@
+{
+  "active": false,
+  "hubId": "jira-transition-issue",
+  "name": "Transition Jira Issue",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Moves a Jira issue to a new workflow status (e.g. 'In Progress', 'Done'). Use to transition, move, start, resolve, or close an issue. If the target status isn't valid from the current state, the available transitions are returned.",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "issueKey": {
+        "description": "The Jira issue key, e.g. 'ENG-123'. Required.",
+        "type": "string"
+      },
+      "status": {
+        "description": "The target status or transition name, e.g. 'In Progress', 'Done'. Required.",
+        "type": "string"
+      },
+      "comment": {
+        "description": "Optional comment to add as part of the transition.",
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "move ENG-42 to In Progress",
+      "call": "{\"issueKey\":\"ENG-42\",\"status\":\"In Progress\"}"
+    },
+    {
+      "prompt": "close OPS-9 as done",
+      "call": "{\"issueKey\":\"OPS-9\",\"status\":\"Done\"}"
+    }
+  ],
+  "imported": true
+}

@@ -1,0 +1,54 @@
+{
+  "active": false,
+  "hubId": "jira-add-to-epic",
+  "name": "Add Issues to Epic",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Adds one or more existing issues to an epic. Use to put issues under an epic or attach issues to an epic.",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "epicKey": {
+        "description": "The epic's issue key, e.g. 'ENG-100'. Required.",
+        "type": "string"
+      },
+      "issueKeys": {
+        "description": "Comma-separated issue keys to add to the epic, e.g. 'ENG-1,ENG-2'. Required.",
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "add ENG-1 and ENG-2 to epic ENG-100",
+      "call": "{\"epicKey\":\"ENG-100\",\"issueKeys\":\"ENG-1,ENG-2\"}"
+    }
+  ],
+  "imported": true
+}

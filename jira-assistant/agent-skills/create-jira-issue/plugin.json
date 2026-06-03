@@ -1,0 +1,85 @@
+{
+  "active": false,
+  "hubId": "create-jira-issue",
+  "name": "Create Jira Issue",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Creates a new issue (Task, Story, Bug, Epic, etc.) in a Jira project. Use when the user asks to file, open, raise, or create an issue/ticket.",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    },
+    "JIRA_DEFAULT_PROJECT_KEY": {
+      "type": "string",
+      "required": false,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "ENG",
+        "hint": "Optional. Project key used when the user does not name a project."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "summary": {
+        "description": "The one-line title of the issue. Required.",
+        "type": "string"
+      },
+      "projectKey": {
+        "description": "Project key to create the issue in, e.g. 'ENG'. If omitted, the configured default project key is used.",
+        "type": "string"
+      },
+      "issueType": {
+        "description": "Issue type name, e.g. 'Task', 'Story', 'Bug', 'Epic'. Defaults to 'Task'.",
+        "type": "string"
+      },
+      "description": {
+        "description": "Full body/description of the issue in plain text. Optional.",
+        "type": "string"
+      },
+      "labels": {
+        "description": "Optional comma-separated labels, e.g. 'backend,urgent'.",
+        "type": "string"
+      },
+      "priority": {
+        "description": "Optional priority name, e.g. 'High'.",
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "Open a bug in ENG: login page 500s on Safari",
+      "call": "{\"projectKey\":\"ENG\",\"issueType\":\"Bug\",\"summary\":\"Login page 500s on Safari\"}"
+    },
+    {
+      "prompt": "File a task to update the onboarding docs",
+      "call": "{\"issueType\":\"Task\",\"summary\":\"Update the onboarding docs\"}"
+    }
+  ],
+  "imported": true
+}

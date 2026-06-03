@@ -1,0 +1,54 @@
+{
+  "active": false,
+  "hubId": "jira-list-sprints",
+  "name": "List Jira Sprints",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Lists sprints for an agile board (id, name, state). Use to find a sprint id, or to see active/future sprints. Requires a board id (see the List Jira Boards skill).",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "boardId": {
+        "description": "The agile board id. Required.",
+        "type": "number"
+      },
+      "state": {
+        "description": "Optional comma-separated sprint states to filter: 'active', 'future', 'closed'.",
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "show active sprints on board 12",
+      "call": "{\"boardId\":12,\"state\":\"active\"}"
+    }
+  ],
+  "imported": true
+}

@@ -1,0 +1,54 @@
+{
+  "active": false,
+  "hubId": "jira-add-to-sprint",
+  "name": "Add Issues to Sprint",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Moves one or more issues into a sprint. Use to add issues to a sprint. Requires a sprint id (see the List Jira Sprints skill).",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "sprintId": {
+        "description": "The target sprint id. Required.",
+        "type": "number"
+      },
+      "issueKeys": {
+        "description": "Comma-separated issue keys to move into the sprint, e.g. 'ENG-1,ENG-2'. Required.",
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "add ENG-1 to sprint 34",
+      "call": "{\"sprintId\":34,\"issueKeys\":\"ENG-1\"}"
+    }
+  ],
+  "imported": true
+}

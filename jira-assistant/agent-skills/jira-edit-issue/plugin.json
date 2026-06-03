@@ -1,0 +1,70 @@
+{
+  "active": false,
+  "hubId": "jira-edit-issue",
+  "name": "Edit Jira Issue",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Updates fields on an existing Jira issue (summary, description, priority, labels). Use to edit, update, or change an issue's fields. For status changes use the transition skill; for assignment use the assign skill.",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "issueKey": {
+        "description": "The Jira issue key to edit, e.g. 'ENG-123'. Required.",
+        "type": "string"
+      },
+      "summary": {
+        "description": "New summary/title. Optional.",
+        "type": "string"
+      },
+      "description": {
+        "description": "New description (replaces the existing one). Optional.",
+        "type": "string"
+      },
+      "priority": {
+        "description": "New priority name, e.g. 'High'. Optional.",
+        "type": "string"
+      },
+      "labels": {
+        "description": "Comma-separated labels to SET on the issue (replaces existing labels). Optional.",
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "rename ENG-42 to 'Login 500 on Safari'",
+      "call": "{\"issueKey\":\"ENG-42\",\"summary\":\"Login 500 on Safari\"}"
+    },
+    {
+      "prompt": "set OPS-9 priority to High",
+      "call": "{\"issueKey\":\"OPS-9\",\"priority\":\"High\"}"
+    }
+  ],
+  "imported": true
+}

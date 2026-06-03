@@ -1,0 +1,45 @@
+{
+  "active": false,
+  "hubId": "jira-whoami",
+  "name": "Jira Whoami",
+  "schema": "skill-1.0.0",
+  "version": "1.0.0",
+  "description": "Returns the current Jira user (username, display name, email) for the configured token. Use to check who you are authenticated as.",
+  "author": "anything-jira",
+  "license": "MIT",
+  "setup_args": {
+    "JIRA_BASE_URL": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "text",
+        "default": "",
+        "placeholder": "https://jira.your-company.com",
+        "hint": "Base URL of your Jira Server / Data Center instance."
+      },
+      "value": ""
+    },
+    "JIRA_PAT": {
+      "type": "string",
+      "required": true,
+      "input": {
+        "type": "password",
+        "default": "",
+        "placeholder": "Your Jira personal access token",
+        "hint": "Jira Data Center Personal Access Token. Sent as a Bearer token. Stored locally in this skill's plugin.json."
+      },
+      "value": ""
+    }
+  },
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {}
+  },
+  "examples": [
+    {
+      "prompt": "who am I in Jira",
+      "call": "{}"
+    }
+  ],
+  "imported": true
+}
